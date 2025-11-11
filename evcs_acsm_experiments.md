@@ -1,3 +1,7 @@
+<script type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
 #Augmented Synthetic Control for Continuous Field Experiments in EV Charging Networks
 
 ##1. Introduction: Experimentation in a Complex, Real-World EV Network
