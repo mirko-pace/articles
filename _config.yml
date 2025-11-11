@@ -1,0 +1,7 @@
+# _config.yml
+title: EVCS Articles
+theme: minima          # any Pages theme is fine
+markdown: kramdown
+kramdown:
+  input: GFM
+  math_engine: mathjax
