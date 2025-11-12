@@ -1,6 +1,6 @@
 # _config.yml
-title: EVCS Articles
-theme: minima          # any Pages theme is fine
+title: EVCS Analytics
+theme: cayman          # any Pages theme is fine
 markdown: kramdown
 kramdown:
   input: GFM
