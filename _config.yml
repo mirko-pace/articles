@@ -1,6 +1,9 @@
-# _config.yml
 title: EVCS Analytics
-theme: cayman          # any Pages theme is fine
+description: Field experiments & causal inference
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+
 markdown: kramdown
 kramdown:
   input: GFM
