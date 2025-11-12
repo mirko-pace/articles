@@ -2,10 +2,20 @@
 title: Augmented Synthetic Control for Continuous Field Experiments in EV Charging Networks
 ---
 
-<!-- Load MathJax on this page -->
 <script type="text/javascript"
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
 </script>
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$','$$'], ['\\[','\\]']]
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 
 
 ## 1. Introduction: Experimentation in a Complex, Real-World EV Network
