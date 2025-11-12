@@ -26,7 +26,7 @@ Traditional difference-in-difference (diff-in-diff) approaches used in the past 
 The **Synthetic Control Method (SCM)** provides a transparent, data-driven way to estimate the causal impact of an intervention when only one or a few units are treated and no randomized control exists.  
 The core idea is to construct a *synthetic twin* for the treated unit—a weighted average of untreated (donor) units whose pre-intervention outcomes closely reproduce the treated unit’s pre-treatment trajectory.
 
-Formally, let \( Y_{it}(0) \) denote the outcome for unit \( i \) at time \( t \) had it never been treated, and \( Y_{it}(1) \) be the outcome under treatment.  
+Formally, let $Y_{it}(0)$ denote the outcome for unit \( i \) at time \( t \) had it never been treated, and \( Y_{it}(1) \) be the outcome under treatment.  
 For \( i = 1 \) (the treated unit) and donors \( i = 2,\dots,J+1 \), SCM seeks a vector of non-negative weights
 
 $$
