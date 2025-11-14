@@ -28,7 +28,14 @@ $$
 \min_{\mathbf{W}} \ \lVert X_1 - X_0 \mathbf{W} \rVert_V^2,
 $$
 
-and uses $\hat{Y}_{1t}(0)=\sum_j w_j^* Y_{jt}$ as the counterfactual. The effect at $t$ is $\widehat{\tau}_{1t}=Y_{1t}-\hat{Y}_{1t}(0)$.
+and uses 
+
+$$
+\hat{Y}_{1t}(0)=\sum_j w_j^* Y_{jt}
+$$ 
+
+as the counterfactual. 
+The effect at $t$ is $\widehat{\tau}_{1t}=Y_{1t}-\hat{Y}_{1t}(0)$.
 
 
 ## 3.2 Introducing the Augmented Synthetic Control Method (ASCM)
