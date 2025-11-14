@@ -163,3 +163,47 @@ summarize the average post-treatment ATT with uncertainty (e.g., jackknife acros
 
 Net effect: the covariates give ASCM a clearer picture of each treated location’s “baseline pattern,” the ridge piece dampens day-to-day noise, and the pooled view turns five small experiments into one consistent story about off-peak shifting and overall effect of time-of-use pricing.
 
+
+## 6. Inference & Hypothesis Testing
+
+### 6.1 State the hypothesis
+Our goal is to determine whether the intervention lifted the **share of off-peak kWh** for the treated locations, relative to what would have happened without the change. Formally, we treat the **Average Treatment Effect on the Treated (ATT)** as our target: the daily ATT is the treated unit’s outcome minus its synthetic counterfactual, and the **average post-treatment ATT** is the mean of those daily effects after go-live. The null hypothesis asserts no improvement—on average, the post-treatment effect is zero. When we expect an increase, we phrase this as a one-sided test: under **H₀**, the average ATT is less than or equal to zero; under **H₁**, it is strictly positive.
+
+### 6.2 Per-location inference (ASCM built-ins)
+For each treated station we rely on ASCM’s **conformal inference**, which is designed for time-series outcomes and provides a valid test of the **average post-treatment effect** along with **pointwise confidence intervals** for the daily effects. In practice, we fit the model and then call `summary()` with conformal inference enabled and a one-sided statistic that matches our directional hypothesis:
+
+```r
+# Conformal inference (per fitted asyn object)
+sumres <- summary(
+  asyn,
+  inf_type  = "conformal",
+  stat_func = function(x) -sum(x)  # one-sided: positive average effect
+)
+
+# Readouts
+avg_att <- sumres$avg_att          # average post ATT (treated - synthetic)
+avg_ci  <- sumres$avg_ci           # 95% CI for average post ATT
+pval    <- sumres$p_val            # joint p-value for the average effect
+
+# Daily CIs (pointwise)
+att_ci  <- as.data.frame(sumres$att)  # columns: Time, Estimate, Lower, Upper
+```
+
+We then interpret the output in the usual way. If the conformal p-value is below our threshold (e.g., 0.05) and the 95% interval for the average effect excludes zero, we conclude that the site exhibits a statistically detectable increase in off-peak share. If not, we retain the null for that location.
+
+### 6.3 Pooled inference across treated locations
+Because we run one ASCM per treated station, we also summarize the overall impact across sites. First we compute the per-unit average post ATT, then take their mean (either equal-weight or kWh-weighted using pre-treatment average kWh to avoid leakage). To express uncertainty at the network level, we use a jackknife over treated units: repeatedly leave one site out, recompute the pooled mean, and use the dispersion of those leave-one-out estimates to form a standard error and confidence interval.
+
+```r
+# unit_avg: data frame with one row per treated unit and its average post ATT
+theta_hat <- mean(unit_avg$avg_post_att, na.rm = TRUE)  # pooled mean
+nU <- nrow(unit_avg)
+theta_i <- sapply(1:nU, function(i) mean(unit_avg$avg_post_att[-i], na.rm = TRUE))
+jk_se <- sqrt(((nU - 1) / nU) * sum((theta_i - mean(theta_i))^2))
+jk_ci <- c(theta_hat - qnorm(0.975) * jk_se, theta_hat + qnorm(0.975) * jk_se)
+```
+
+If the resulting pooled 95% interval does not include zero, we take that as evidence—at the portfolio level—that the intervention increased the off-peak share. Reporting both equal-weight and kWh-weighted versions is helpful: the former treats each site symmetrically, while the latter reflects operational scale.
+
+### 6.4 Multiple views to avoid false comfort
+Finally, we complement the formal tests with visual diagnostics. Daily ATT curves with conformal (or Jackknife+) pointwise bands reveal how effects evolve and whether they persist; the average post ATT with its p-value and interval provides the primary decision anchor. We also translate percentage-point effects into operational terms (e.g., additional MWh moved off-peak per month) to connect statistical significance with business significance.
