@@ -35,7 +35,11 @@ $$
 $$ 
 
 as the counterfactual. 
-The effect at $t$ is $\widehat{\tau}_{1t}=Y_{1t}-\hat{Y}_{1t}(0)$.
+The effect at $t$ is 
+
+$$
+\widehat{\tau}_{1t}=Y_{1t}-\hat{Y}_{1t}(0)
+$$
 
 
 ## 3.2 Introducing the Augmented Synthetic Control Method (ASCM)
@@ -96,13 +100,13 @@ From a technical perspective, the setup was fairly straightforward. We pulled da
 
 A small portion of the raw dataset looked like this:
 
-```
-  date       location_id treated post capacity uptime  kwh_peak  kwh_offpeak n_sessions total_kwh
-1 2025-04-01 50 0 0 200 98.54 479.7380 1056.7700 52 1536.5080
-2 2025-04-01 51 0 0 200 83.33 18.8570 103.3530 14 122.2100
-3 2025-04-01 53 0 0 250 99.97 285.1828 1007.6045 72 1292.7873
-4 2025-04-01 54 0 0 200 98.62 405.0850 772.6820 37 1177.7670
-```
+
+|date|location_id|treated|post|capacity|uptime|kwh_peak|kwh_offpeak|n_sessions|total_kwh
+1|2025-04-01|50|0|0|200|98.54|479.7380|1056.7700|52|1536.5080
+2|2025-04-01|51|0|0|200|83.33|18.8570|103.3530|14|122.2100
+3|2025-04-01|53|0|0|250|99.97|285.1828|1007.6045|72|1292.7873
+4|2025-04-01|54|0|0|200|98.62|405.0850|772.6820|37|1177.7670
+
 
 Each record corresponds to one station on one calendar day, including whether it belonged to the treatment group (`treated = 1`), whether the intervention had already started (`post = 1`), and basic operational metrics such as uptime, energy delivered, and number of sessions.
 
