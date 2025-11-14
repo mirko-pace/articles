@@ -207,3 +207,19 @@ If the resulting pooled 95% interval does not include zero, we take that as evid
 
 ### 6.4 Multiple views to avoid false comfort
 Finally, we complement the formal tests with visual diagnostics. Daily ATT curves with conformal (or Jackknife+) pointwise bands reveal how effects evolve and whether they persist; the average post ATT with its p-value and interval provides the primary decision anchor. We also translate percentage-point effects into operational terms (e.g., additional MWh moved off-peak per month) to connect statistical significance with business significance.
+
+
+## References
+
+- **Abadie, A., Diamond, A., & Hainmueller, J. (2010).** Synthetic Control Methods for Comparative Case Studies: Estimating the Effect of California’s Tobacco Control Program. *Journal of the American Statistical Association* https://doi.org/10.1198/jasa.2009.ap08746. :contentReference[oaicite:0]{index=0}
+
+- **Ben-Michael, E., Feller, A., & Rothstein, J. (2021).** The Augmented Synthetic Control Method. *Journal of the American Statistical Association* (JASA); https://doi.org/10.1080/01621459.2021.1929245 :contentReference[oaicite:1]{index=1}
+
+- **augsynth R package** — Implementation of ASCM with vignettes (single and staggered adoption) and examples. https://github.com/ebenmichael/augsynth :contentReference[oaicite:2]{index=2}
+
+- **Chernozhukov, V., Wüthrich, K., & Zhu, Y. (2021/2022).** Exact and Robust Conformal Inference for Counterfactual and Synthetic Controls. (JASA article / arXiv preprint). https://doi.org/10.1080/01621459.2021.1920957 :contentReference[oaicite:3]{index=3}
+
+- **Sun, L., Ben-Michael, E., & Feller, A. (2025).** Using Multiple Outcomes to Improve the Synthetic Control Method. https://arxiv.org/pdf/2311.16260. :contentReference[oaicite:4]{index=4}
+
+- **Practical tutorial:** Conformal Inference for Synthetic Control (walk-through with code and intuition). https://matheusfacure.github.io/python-causality-handbook/Conformal-Inference-for-Synthetic-Control.html?utm_source=chatgpt.com :contentReference[oaicite:5]{index=5}
+
