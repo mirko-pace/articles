@@ -100,74 +100,66 @@ From a technical perspective, the setup was fairly straightforward. We pulled da
 
 A small portion of the raw dataset looked like this:
 
+| date       | location_id | treated | post | capacity | uptime | kwh_peak | kwh_offpeak | n_sessions | total_kwh |
+| ---------- | ----------- | ------- | ---- | -------- | ------ | -------- | ----------- | ---------- | --------- |
+| 2025-04-01 | 50          | 0       | 0    | 200      | 98.54  | 479.7380 | 1056.7700   | 52         | 1536.5080 |
+| 2025-04-01 | 51          | 0       | 0    | 200      | 83.33  | 18.8570  | 103.3530    | 14         | 122.2100  |
+| 2025-04-01 | 53          | 0       | 0    | 250      | 99.97  | 285.1828 | 1007.6045   | 72         | 1292.7873 |
+| 2025-04-01 | 54          | 0       | 0    | 200      | 98.62  | 405.0850 | 772.6820    | 37         | 1177.7670 |
 
-|date|location_id|treated|post|capacity|uptime|kwh_peak|kwh_offpeak|n_sessions|total_kwh
-1|2025-04-01|50|0|0|200|98.54|479.7380|1056.7700|52|1536.5080
-2|2025-04-01|51|0|0|200|83.33|18.8570|103.3530|14|122.2100
-3|2025-04-01|53|0|0|250|99.97|285.1828|1007.6045|72|1292.7873
-4|2025-04-01|54|0|0|200|98.62|405.0850|772.6820|37|1177.7670
 
+**Outcome.** For every day and station, we compute the **share of kWh delivered off-peak**:  
+`share_offpeak = kwh_offpeak / (kwh_peak + kwh_offpeak)` (when total > 0).
 
-Each record corresponds to one station on one calendar day, including whether it belonged to the treatment group (`treated = 1`), whether the intervention had already started (`post = 1`), and basic operational metrics such as uptime, energy delivered, and number of sessions.
+**Covariates (pre-period only).** To help the synthetic control match each treated station **before** the change, we compute unit-level summaries **using only pre-treatment days**:  
+- capacity  
+- uptime  
+- number of sessions per day  
+- baseline off-peak share (mean of `share_offpeak`)  
+- a simple pre-trend (slope of `share_offpeak` over time)
 
-Once the panel was clean, we used the **`augsynth`** package in R to estimate the augmented synthetic control model. In practice, this meant specifying the treated group, the intervention date, and the outcome variable — the share of off-peak kWh. The ridge regression component acted as a stabilizer, reducing noise in the donor weights and helping the model find a smoother “synthetic twin” for the treated group.
+```r
+# Pre-treatment covariates per station (no leakage)
+pre_cov <- df %>%
+  dplyr::filter(date < t_start) %>%
+  dplyr::group_by(location_id) %>%
+  dplyr::summarise(
+    cov_capacity_mean = mean(capacity, na.rm = TRUE),
+    cov_uptime_mean   = mean(uptime,   na.rm = TRUE),
+    cov_sess_mean     = mean(n_sessions, na.rm = TRUE),
+    cov_share_pre     = mean(share_offpeak, na.rm = TRUE),
+    cov_share_trend   = {
+      tt <- as.numeric(date); yy <- share_offpeak
+      if (sum(is.finite(tt) & is.finite(yy)) >= 5) as.numeric(coef(lm(yy ~ tt))[2]) else NA_real_
+    },
+    .groups = "drop"
+  ) %>%
+  tidyr::drop_na()
+```
+**Fit strategy:** Instead of collapsing the five locations into one treated group, we run one ASCM per treated station (donors = all non-treated stations), then pool effects across the five. This keeps things interpretable (actual vs synthetic for each site) and lets covariates improve the pre-fit in a targeted way.
 
-Here’s a simplified version of the core R call we used:
+**Model call (per treated location):** We pass covariates through the pipe in augsynth so the method balances on these predictors in the pre period, and we keep ridge augmentation for stability.
 
 ```r
 asyn <- augsynth(
-  outcome ~ 1,
-  unit   = unit,
-  time   = time,
-  t_int  = t_int_id,
-  data   = as_data,
-  treat  = "treated_group",
+  outcome ~ treated | cov_capacity_mean + cov_uptime_mean + cov_sess_mean + cov_share_pre + cov_share_trend,
+  unit     = unit,
+  time     = time,
+  t_int    = t_int_id,
+  data     = as_data_with_covs,  # panel joined with pre_cov by unit
   progfunc = "Ridge",
-  scm = TRUE
+  scm      = TRUE,
+  fixedeff = FALSE,
+  cov_agg  = mean                # harmless since covariates are constant per unit
 )
 ```
 
-The output gave us two main pieces of information:
-a reconstructed counterfactual series showing how the treated group would have evolved without the pricing change, and
-the difference between the actual and synthetic trajectories — the estimated treatment effect over time.
-To make interpretation easier, we visualized these results using simple line charts comparing the treated and synthetic trends, and another plot showing the daily treatment effect with confidence intervals. Together, these views gave us both a visual and statistical sense of how strong and consistent the off-peak shift really was.
+Before fitting, we (a) align dates, (b) require full pre-period coverage for donors, and (c) drop any donor with zero pre-period variance in the outcome (these break the QP step and don’t help matching anyway).
 
+Pooling & reading results. From each single-unit fit we extract the daily ATT (treated minus synthetic). We then:
+plot actual vs synthetic off-peak share for each station,
+compute a pooled daily ATT across the five treated sites (equal-weight or kWh-weighted using pre-period average kWh), and
+summarize the average post-treatment ATT with uncertainty (e.g., jackknife across the five units, plus conformal pointwise CIs from summary(asyn) for each unit).
 
-## 5. Implementation Details
+Net effect: the covariates give ASCM a clearer picture of each treated location’s “baseline pattern,” the ridge piece dampens day-to-day noise, and the pooled view turns five small experiments into one consistent story about off-peak shifting and overall effect of time-of-use pricing.
 
-From a technical perspective, the setup was fairly straightforward. We pulled daily station-level metrics directly from our Snowflake warehouse using R’s `DBI` and `dplyr` libraries, focusing on energy delivered during peak and off-peak hours, session counts, uptime, and capacity. Each station’s daily data became one row in a panel dataset, where the columns represented the key performance variables and the dates defined a continuous timeline.
-
-A small portion of the raw dataset looked like this:
-
-  date       location_id treated post capacity uptime  kwh_peak  kwh_offpeak n_sessions total_kwh
-1 2025-04-01 50 0 0 200 98.54 479.7380 1056.7700 52 1536.5080
-2 2025-04-01 51 0 0 200 83.33 18.8570 103.3530 14 122.2100
-3 2025-04-01 53 0 0 250 99.97 285.1828 1007.6045 72 1292.7873
-4 2025-04-01 54 0 0 200 98.62 405.0850 772.6820 37 1177.7670
-
-
-Each record corresponds to one station on one calendar day, including whether it belonged to the treatment group (`treated = 1`), whether the intervention had already started (`post = 1`), and basic operational metrics such as uptime, energy delivered, and number of sessions.
-
-After preparing the data, we created a simple aggregate for our five treated locations and kept all other active stations as potential donors. To make sure every control unit had a comparable baseline, we filtered out any stations that were missing dates before the intervention. This step is important because ASCM relies heavily on consistent pre-treatment trends to learn the right synthetic combination.
-
-Once the panel was clean, we used the **`augsynth`** package in R to estimate the augmented synthetic control model. In practice, this meant specifying the treated group, the intervention date, and the outcome variable — the share of off-peak kWh. The ridge regression component acted as a stabilizer, reducing noise in the donor weights and helping the model find a smoother “synthetic twin” for the treated group.
-
-Here’s a simplified version of the core R call we used:
-
-```r
-asyn <- augsynth(
-  outcome ~ 1,
-  unit   = unit,
-  time   = time,
-  t_int  = t_int_id,
-  data   = as_data,
-  treat  = "treated_group",
-  progfunc = "Ridge",
-  scm = TRUE
-)
-```
-
-The output gave us two main pieces of information:
-a reconstructed counterfactual series showing how the treated group would have evolved without the pricing change, and
-the difference between the actual and synthetic trajectories — the estimated treatment effect over time.
-To make interpretation easier, we visualized these results using simple line charts comparing the treated and synthetic trends, and another plot showing the daily treatment effect with confidence intervals. Together, these views gave us both a visual and statistical sense of how strong and consistent the off-peak shift really was.
