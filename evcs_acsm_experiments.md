@@ -23,27 +23,31 @@ Traditional difference-in-difference (diff-in-diff) approaches used in the past 
 ## 3. Why Synthetic Control (and its Augmented Variant)
 ## 3.1 The Synthetic Control Method (SCM)
 The **Synthetic Control Method (SCM)** builds a “synthetic twin” for a treated unit by combining donor units so that the pre-treatment trajectory matches as closely as possible. Formally, let $Y_{it}(0)$ be the outcome for unit $i$ at time $t$ without treatment. For treated unit $i=1$ and donors $i=2,\dots,J+1$, SCM finds weights $\mathbf{W}=(w_2,\dots,w_{J+1})'$ with $w_j \ge 0$ and $\sum_j w_j=1$ that minimize the pre-period mismatch:
+
 $$
 \min_{\mathbf{W}} \ \lVert X_1 - X_0 \mathbf{W} \rVert_V^2,
 $$
+
 and uses $\hat{Y}_{1t}(0)=\sum_j w_j^* Y_{jt}$ as the counterfactual. The effect at $t$ is $\widehat{\tau}_{1t}=Y_{1t}-\hat{Y}_{1t}(0)$.
 
 
 ## 3.2 Introducing the Augmented Synthetic Control Method (ASCM)
 SCM can struggle when the treated unit isn’t well-approximated by a convex mix of donors or when pre-periods are short. **ASCM** adds a lightweight prediction model to “correct” whatever imbalance remains after re-weighting:
+
 $$
 \hat{Y}_{1t}^{\mathrm{ASCM}}(0)
 = \underbrace{\sum_j w_j^* Y_{jt}}_{\text{SCM}}
 + \Big[m(X_{1t}) - \sum_j w_j^* m(X_{jt})\Big],
 $$
+
 where $m(\cdot)$ is a simple outcome model trained **only on pre-treatment** data (we use ridge regression). This reduces bias without over-fitting noisy daily swings.
 
 ### 3.3 Using Covariates in ASCM (what we actually did)
 To help the synthetic match the treated units **before** the intervention, we included a small set of stable, pre-treatment covariates per location. Concretely, we compute per-unit summaries **only on dates $t<t_0$**:
-- Capacity: $\overline{\text{capacity}}$
-- Uptime: $\overline{\text{uptime}}$
-- Number of sessions/day: $\overline{\text{sessions}}$
-- Baseline off-peak share: $\overline{\text{share}}$
+- Capacity
+- Uptime
+- Number of sessions/day
+- Baseline off-peak share
 - Pre-trend (slope) of off-peak share over time
 
 
@@ -58,8 +62,6 @@ outcome ~ treated | cov_capacity + cov_uptime +
 
 ## 4. Applying ASCM at EVCS
 
-## 4. Applying ASCM at EVCS (with Covariates)
-
 We tested ASCM on five locations that moved to a new time-based pricing structure for Pay-As-You-Go customers. The goal was simple: did the **share of kWh delivered off-peak** go up relative to what we would have expected without the change?
 
 **Data we used (daily, station-level):** off-peak and peak kWh, total sessions, uptime, and available capacity. For each station, we built an outcome series (off-peak share) and computed **pre-treatment covariates**: mean capacity, mean uptime, mean sessions, baseline off-peak share, and a pre-trend. These covariates are fixed per unit (computed only on pre days), so there’s no leakage.
@@ -72,6 +74,7 @@ We tested ASCM on five locations that moved to a new time-based pricing structur
 - **SCM weights:** enabled, with routine donor hygiene (drop donors missing pre dates or with zero pre variance)
 
 In practice, the steps looked like:
+
 1) Build the panel with dates aligned for the treated unit and all donors.  
 2) Keep donors with **full** pre coverage and normal variability.  
 3) Join **pre-computed covariates** to each unit.  
@@ -86,12 +89,13 @@ From a technical perspective, the setup was fairly straightforward. We pulled da
 
 A small portion of the raw dataset looked like this:
 
+```
   date       location_id treated post capacity uptime  kwh_peak  kwh_offpeak n_sessions total_kwh
 1 2025-04-01 50 0 0 200 98.54 479.7380 1056.7700 52 1536.5080
 2 2025-04-01 51 0 0 200 83.33 18.8570 103.3530 14 122.2100
 3 2025-04-01 53 0 0 250 99.97 285.1828 1007.6045 72 1292.7873
 4 2025-04-01 54 0 0 200 98.62 405.0850 772.6820 37 1177.7670
-
+```
 
 Each record corresponds to one station on one calendar day, including whether it belonged to the treatment group (`treated = 1`), whether the intervention had already started (`post = 1`), and basic operational metrics such as uptime, energy delivered, and number of sessions.
 
