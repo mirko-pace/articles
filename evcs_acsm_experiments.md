@@ -20,6 +20,9 @@ In a conservative approach, we generally roll out material changes in a limited 
 
 However, our network has a wide range of different setups, contexts in which they operate, and resulting in different levels of utilization, from the single 50kW charger in a very dense, metropolitan area to very powerful 1MW sites along major interstate corridors. From the downtown mall or parking lot in L.A., to the scenic routes in Washington state and Oregon, the EVCS network (counting more than 300 sites and 1600 charging ports) brings high variability in key metrics when looked at each site.
 
+![Off-Peak share of kWh dispensed](/images/off_peak_kwh.png)
+
+
 Traditional difference-in-difference (diff-in-diff) approaches used in the past proved to be difficult to implement and prone to failure due to a variety of reasons beyond our direct control: it was generally challenging to find a subset of "control" sites with matching characteristics to the treatment group and stationary trends over time. It was even more challenging to account for external factors, such as equipment issues, weather, and vandalism (to name a few), when you have a very limited number of sites in your treatment and control groups.
 
 ## 3. Why Synthetic Control (and its Augmented Variant)
@@ -110,10 +113,10 @@ A small portion of the raw dataset looked like this:
 | 2025-04-01 | 54          | 0       | 0    | 200      | 98.62  | 405.0850 | 772.6820    | 37         | 1177.7670 |
 
 
-**Outcome.** For every day and station, we compute the **share of kWh delivered off-peak**:  
-`share_offpeak = kwh_offpeak / (kwh_peak + kwh_offpeak)` (when total > 0).
+For every day and location, we then compute the **share of kWh delivered off-peak**:  
+`share_offpeak = kwh_offpeak / (kwh_peak + kwh_offpeak)` (when total > 0). This is the metric we're going to use to test our hypothesis.
 
-**Covariates (pre-period only).** To help the synthetic control match each treated station **before** the change, we compute unit-level summaries **using only pre-treatment days**:  
+To help the synthetic control match each treated station **before** the change, we compute unit-level summaries using only pre-treatment days. We will use as covariates in our model:  
 - capacity  
 - uptime  
 - number of sessions per day  
@@ -138,9 +141,9 @@ pre_cov <- df %>%
   ) %>%
   tidyr::drop_na()
 ```
-**Fit strategy:** Instead of collapsing the five locations into one treated group, we run one ASCM per treated station (donors = all non-treated stations), then pool effects across the five. This keeps things interpretable (actual vs synthetic for each site) and lets covariates improve the pre-fit in a targeted way.
+Taking a slightly different approach to `multi_synth`, we run one ASCM per treated locations where the donors are all non-treated stations, then pool effects across all five. This keeps things interpretable (actual vs synthetic for each site) and lets covariates improve the pre-fit in a targeted way.
 
-**Model call (per treated location):** We pass covariates through the pipe in augsynth so the method balances on these predictors in the pre period, and we keep ridge augmentation for stability.
+Finally, we pass covariates in `augsynth` so the method balances on these predictors in the pre period, and we use Ridge Regression for stability in the augmentation process.
 
 ```r
 asyn <- augsynth(
@@ -152,18 +155,19 @@ asyn <- augsynth(
   progfunc = "Ridge",
   scm      = TRUE,
   fixedeff = FALSE,
-  cov_agg  = mean                # harmless since covariates are constant per unit
+  cov_agg  = mean                
 )
 ```
 
-Before fitting, we (a) align dates, (b) require full pre-period coverage for donors, and (c) drop any donor with zero pre-period variance in the outcome (these break the QP step and don’t help matching anyway).
+Before fitting, we made sure to have full pre-period coverage for donors, and drop any donor with zero pre-period variance in the outcome.
 
-Pooling & reading results. From each single-unit fit we extract the daily ATT (treated minus synthetic). We then:
-plot actual vs synthetic off-peak share for each station,
-compute a pooled daily ATT across the five treated sites (equal-weight or kWh-weighted using pre-period average kWh), and
-summarize the average post-treatment ATT with uncertainty (e.g., jackknife across the five units, plus conformal pointwise CIs from summary(asyn) for each unit).
+### Reading the results
+From each single-unit fit we extract the daily ATT (treated minus synthetic). We then plot actual vs synthetic off-peak share for each location,
+compute a pooled daily ATT across the five treated sites (equal-weight or kWh-weighted using pre-period average kWh), and summarize uncertainty using conformal intervals per unit; for a blended view we plot the pooled mean line and an envelope built from the per-unit conformal bands.
 
-Net effect: the covariates give ASCM a clearer picture of each treated location’s “baseline pattern,” the ridge piece dampens day-to-day noise, and the pooled view turns five small experiments into one consistent story about off-peak shifting and overall effect of time-of-use pricing.
+![ATT trend](/images/att_with_intervals.png)
+
+In a nutshell: the covariates give ASCM a clearer picture of each treated location’s “baseline pattern,” the Ridge Regression dampens day-to-day noise, and the pooled view turns five small experiments into one consistent story about off-peak shifting and overall effect of time-of-use pricing.
 
 
 ## 6. Inference & Hypothesis Testing
@@ -172,7 +176,7 @@ Net effect: the covariates give ASCM a clearer picture of each treated location�
 Our goal is to determine whether the intervention lifted the **share of off-peak kWh** for the treated locations, relative to what would have happened without the change. Formally, we treat the **Average Treatment Effect on the Treated (ATT)** as our target: the daily ATT is the treated unit’s outcome minus its synthetic counterfactual, and the **average post-treatment ATT** is the mean of those daily effects after go-live. The null hypothesis asserts no improvement—on average, the post-treatment effect is zero. When we expect an increase, we phrase this as a one-sided test: under **H₀**, the average ATT is less than or equal to zero; under **H₁**, it is strictly positive.
 
 ### 6.2 Per-location inference (ASCM built-ins)
-For each treated station we rely on ASCM’s **conformal inference**, which is designed for time-series outcomes and provides a valid test of the **average post-treatment effect** along with **pointwise confidence intervals** for the daily effects. In practice, we fit the model and then call `summary()` with conformal inference enabled and a one-sided statistic that matches our directional hypothesis:
+For each treated location we rely on ASCM’s **conformal inference**, which is designed for time-series outcomes and provides a valid test of the **average post-treatment effect** along with **pointwise confidence intervals** for the daily effects. In practice, we fit the model and then call `summary()` with conformal inference enabled and a one-sided statistic that matches our directional hypothesis:
 
 ```r
 # Conformal inference (per fitted asyn object)
@@ -194,21 +198,34 @@ att_ci  <- as.data.frame(sumres$att)  # columns: Time, Estimate, Lower, Upper
 We then interpret the output in the usual way. If the conformal p-value is below our threshold (e.g., 0.05) and the 95% interval for the average effect excludes zero, we conclude that the site exhibits a statistically detectable increase in off-peak share. If not, we retain the null for that location.
 
 ### 6.3 Pooled inference across treated locations
-Because we run one ASCM per treated station, we also summarize the overall impact across sites. First we compute the per-unit average post ATT, then take their mean (either equal-weight or kWh-weighted using pre-treatment average kWh to avoid leakage). To express uncertainty at the network level, we use a jackknife over treated units: repeatedly leave one site out, recompute the pooled mean, and use the dispersion of those leave-one-out estimates to form a standard error and confidence interval.
+Because we fit one ASCM per treated location, each model delivers its own conformal pointwise intervals for the daily ATT. To present a single “blended” view we do two things:
+- compute the **pooled mean ATT** across treated units for each date and plot it as the main line;
+- build a **conservative envelope** by taking, at each date, the **minimum of the unit-level conformal lower bounds** and the **maximum of the unit-level conformal upper bounds**. 
 
 ```r
-# unit_avg: data frame with one row per treated unit and its average post ATT
-theta_hat <- mean(unit_avg$avg_post_att, na.rm = TRUE)  # pooled mean
-nU <- nrow(unit_avg)
-theta_i <- sapply(1:nU, function(i) mean(unit_avg$avg_post_att[-i], na.rm = TRUE))
-jk_se <- sqrt(((nU - 1) / nU) * sum((theta_i - mean(theta_i))^2))
-jk_ci <- c(theta_hat - qnorm(0.975) * jk_se, theta_hat + qnorm(0.975) * jk_se)
+# 1) Pull per-unit conformal ATT bands
+att_ci_all <- map_dfr(fits, function(f) {
+  s <- summary(f$asyn, inf_type = "conformal")
+  df <- as.data.frame(s$att)                
+  df %>%
+    rename(time = Time, est = Estimate, lo = lower_bound, hi = upper_bound) %>%
+    inner_join(f$time_map, by = "time") %>% # adds 'date'
+    transmute(unit_id = f$unit_id, date, est, lo, hi)
+})
+
+# 2) Pooled mean + pointwise envelope
+pooled <- att_ci_all %>%
+  group_by(date) %>%
+  summarise(
+    mean_att = mean(est, na.rm = TRUE),
+    env_lo   = min(lo, na.rm = TRUE),
+    env_hi   = max(hi, na.rm = TRUE),
+    .groups  = "drop"
+  )
 ```
 
-If the resulting pooled 95% interval does not include zero, we take that as evidence—at the portfolio level—that the intervention increased the off-peak share. Reporting both equal-weight and kWh-weighted versions is helpful: the former treats each site symmetrically, while the latter reflects operational scale.
-
 ### 6.4 Multiple views to avoid false comfort
-Finally, we complement the formal tests with visual diagnostics. Daily ATT curves with conformal (or Jackknife+) pointwise bands reveal how effects evolve and whether they persist; the average post ATT with its p-value and interval provides the primary decision anchor. We also translate percentage-point effects into operational terms (e.g., additional MWh moved off-peak per month) to connect statistical significance with business significance.
+Finally, we complement the formal tests with visual diagnostics. Daily ATT curves with conformal pointwise bands reveal how effects evolve and whether they persist; the average post ATT with its p-value and interval provides the primary decision anchor. We also translate percentage-point effects into operational terms (e.g., additional MWh moved off-peak per month) to connect statistical significance with business significance.
 
 
 ## References
