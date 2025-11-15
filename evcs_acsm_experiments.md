@@ -26,7 +26,7 @@ However, our network has a wide range of different setups, contexts in which the
 Traditional difference-in-difference (diff-in-diff) approaches used in the past proved to be difficult to implement and prone to failure due to a variety of reasons beyond our direct control: it was generally challenging to find a subset of "control" sites with matching characteristics to the treatment group and stationary trends over time. It was even more challenging to account for external factors, such as equipment issues, weather, and vandalism (to name a few), when you have a very limited number of sites in your treatment and control groups.
 
 ## 3. Why Synthetic Control (and its Augmented Variant)
-## 3.1 The Synthetic Control Method (SCM)
+### 3.1 The Synthetic Control Method (SCM)
 The **Synthetic Control Method (SCM)** builds a “synthetic twin” for a treated unit by combining donor units so that the pre-treatment trajectory matches as closely as possible. Formally, let $Y_{it}(0)$ be the outcome for unit $i$ at time $t$ without treatment. For treated unit $i=1$ and donors $i=2,\dots,J+1$, SCM finds weights $\mathbf{W}=(w_2,\dots,w_{J+1})'$ with $w_j \ge 0$ and $\sum_j w_j=1$ that minimize the pre-period mismatch:
 
 $$
@@ -47,7 +47,7 @@ $$
 $$
 
 
-## 3.2 Introducing the Augmented Synthetic Control Method (ASCM)
+### 3.2 Introducing the Augmented Synthetic Control Method (ASCM)
 SCM can struggle when the treated unit isn’t well-approximated by a convex mix of donors or when pre-periods are short. **ASCM** adds a lightweight prediction model to “correct” whatever imbalance remains after re-weighting:
 
 $$
@@ -58,7 +58,7 @@ $$
 
 where $m(\cdot)$ is a simple outcome model trained **only on pre-treatment** data (we use ridge regression). This reduces bias without over-fitting noisy daily swings.
 
-### 3.3 Using Covariates in ASCM (what we actually did)
+### 3.3 Using Covariates in ASCM 
 To help the synthetic match the treated units **before** the intervention, we included a small set of stable, pre-treatment covariates per location. Concretely, we compute per-unit summaries **only on dates $t<t_0$**:
 - Capacity
 - Uptime
@@ -101,9 +101,9 @@ This approach keeps the story simple—compare actual vs synthetic for each site
 
 ## 5. Implementation Details
 
-From a technical perspective, the setup was fairly straightforward. We pulled daily station-level metrics directly from our Snowflake warehouse using R’s `DBI` and `dplyr` libraries, focusing on energy delivered during peak and off-peak hours, session counts, uptime, and capacity. Each station’s daily data became one row in a panel dataset, where the columns represented the key performance variables and the dates defined a continuous timeline.
+From a technical perspective, the setup is fairly straightforward. We pulled daily location-level metrics directly from our data warehouse using R’s `DBI` and `dplyr` libraries, focusing on energy delivered during peak and off-peak hours, session counts, uptime, and capacity. Each location’s daily data became one row in a panel dataset, where the columns represented the key performance variables and the dates defined a continuous timeline.
 
-A small portion of the raw dataset looked like this:
+A small portion of the raw dataset looks like this:
 
 | date       | location_id | treated | post | capacity | uptime | kwh_peak | kwh_offpeak | n_sessions | total_kwh |
 | ---------- | ----------- | ------- | ---- | -------- | ------ | -------- | ----------- | ---------- | --------- |
