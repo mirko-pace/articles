@@ -13,7 +13,8 @@ During the second half of 2025, we've been working on implementing time-based en
 The challenges while conducting experiments in this context are numerous. First of all, we would not implement randomized sampling strategies as we favor the consistency of the experience and fairness towards the EV drivers using our network.
 As we examine quasi-experimental designs, such as geo-testing, the heterogeneous nature of our different charging sites - with varying equipment, surroundings, and utilization levels and patterns - poses another significant challenge to a solid and trustworthy approach.
 
-In this article, we want to illustrate how we adopted the Augmented Synthetic Control methodology to measure the impact of many of our pricing experiments.
+In this article, we use a concrete running example: shifting the share of kWh delivered off-peak after introducing time-based energy rates for Pay-As-You-Go customers. The question we keep returning to is simple—did off-peak share go up, relative to a credible counterfactual?—and we show how Augmented Synthetic Control (ASCM) helps answer it in a network with high day-to-day variability.
+
 
 ## 2. The Challenge: High Variability & Sparse Units
 In a conservative approach, we generally roll out material changes in a limited subset of locations. Typically, a mix of 5 to 10 sites represents a good balance of the key traits of our entire network. 
@@ -77,19 +78,17 @@ outcome ~ treated | cov_capacity + cov_uptime +
 
 
 ## 4. Applying ASCM at EVCS
-
-We tested ASCM on five locations that moved to a new time-based pricing structure for Pay-As-You-Go customers. The goal was simple: did the **share of kWh delivered off-peak** go up relative to what we would have expected without the change?
+We focus on five locations that move to a new time-based pricing structure for Pay-As-You-Go customers. The outcome is the **daily off-peak share** (off-peak kWh divided by total kWh). Our goal is to estimate if and how much that share increases for each treated site relative to what would have happened without the introduction of time-of-use pricing.
 
 **Data we used (daily, station-level):** off-peak and peak kWh, total sessions, uptime, and available capacity. For each station, we built an outcome series (off-peak share) and computed **pre-treatment covariates**: mean capacity, mean uptime, mean sessions, baseline off-peak share, and a pre-trend. These covariates are fixed per unit (computed only on pre days), so there’s no leakage.
 
-**How we fit the model:** instead of aggregating the five sites into one treated group, we ran ASCM **per treated location** (using all non-treated sites as donors) and then pooled effects across the five. In each single-unit fit we used:
-- **Outcome:** daily off-peak share
-- **Treatment timing:** the go-live date for pricing
-- **Covariates (pre-period only):** the five summaries listed above
-- **Augmentation:** ridge regression (keeps the prediction stable)
-- **SCM weights:** enabled, with routine donor hygiene (drop donors missing pre dates or with zero pre variance)
+We fit one ASCM **per treated location** where the donors are all non-treated sites, and then pool effects. For each single-site fit we use:
+- **Outcome**: daily off-peak share
+- **Treatment timing**: the go-live date for pricing
+- **Pre-period covariates**: mean capacity, mean uptime, mean sessions, baseline off-peak share, and a pre-trend of off-peak share
+- **Augmentation**: Ridge Regression, with SCM weights enabled and donor hygiene (drop missing pre coverage or zero pre variance)
 
-In practice, the steps looked like:
+In practice, the steps look like the following:
 
 1) Build the panel with dates aligned for the treated unit and all donors.  
 2) Keep donors with **full** pre coverage and normal variability.  
@@ -101,7 +100,7 @@ This approach keeps the story simple—compare actual vs synthetic for each site
 
 ## 5. Implementation Details
 
-From a technical perspective, the setup is fairly straightforward. We pulled daily location-level metrics directly from our data warehouse using R’s `DBI` and `dplyr` libraries, focusing on energy delivered during peak and off-peak hours, session counts, uptime, and capacity. Each location’s daily data became one row in a panel dataset, where the columns represented the key performance variables and the dates defined a continuous timeline.
+From a technical perspective, the setup is fairly straightforward. We pull daily location-level metrics directly from our data warehouse using R’s `DBI` and `dplyr` libraries, focusing on energy delivered during peak and off-peak hours, session counts, uptime, and capacity. Each location’s daily data is represented in one row in a panel dataset, where the columns contain the key performance variables and the dates defined a continuous timeline.
 
 A small portion of the raw dataset looks like this:
 
