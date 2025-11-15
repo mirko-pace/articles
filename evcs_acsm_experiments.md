@@ -13,8 +13,8 @@ During the second half of 2025, we've been working on implementing time-based en
 The challenges while conducting experiments in this context are numerous. First of all, we would not implement randomized sampling strategies as we favor the consistency of the experience and fairness towards the EV drivers using our network.
 As we examine quasi-experimental designs, such as geo-testing, the heterogeneous nature of our different charging sites - with varying equipment, surroundings, and utilization levels and patterns - poses another significant challenge to a solid and trustworthy approach.
 
-In this article, we use a concrete running example: shifting the share of kWh delivered off-peak after introducing time-based energy rates for Pay-As-You-Go customers. The question we keep returning to is simple—did off-peak share go up, relative to a credible counterfactual?—and we show how Augmented Synthetic Control (ASCM) helps answer it in a network with high day-to-day variability.
-
+In this article, we use a concrete running example: shifting the share of kWh delivered off-peak after introducing time-based energy rates for Pay-As-You-Go customers. Our null hypothesis is that the intervention does not increase off-peak share relative to the counterfactual, i.e., the average post-treatment ATT is ≤ 0. The alternative hypothesis is that the intervention increases off-peak share, i.e., the average post-treatment ATT is > 0.
+In EVCS, we use Augmented Synthetic Control (ASCM) to construct the counterfactual and test this hypothesis, even in the presence of high day-to-day variability.
 
 ## 2. The Challenge: High Variability & Sparse Units
 In a conservative approach, we generally roll out material changes in a limited subset of locations. Typically, a mix of 5 to 10 sites represents a good balance of the key traits of our entire network. 
@@ -60,7 +60,7 @@ $$
 where $m(\cdot)$ is a simple outcome model trained **only on pre-treatment** data (we use ridge regression). This reduces bias without over-fitting noisy daily swings.
 
 ### 3.3 Using Covariates in ASCM 
-To help the synthetic match the treated units **before** the intervention, we included a small set of stable, pre-treatment covariates per location. Concretely, we compute per-unit summaries **only on dates $t<t_0$**:
+In our time-of-use example, to help the synthetic match the treated units **before** the intervention, we included a small set of stable, pre-treatment covariates per location. Concretely, we compute per-unit summaries **only on dates $t<t_0$**:
 - Capacity
 - Uptime
 - Number of sessions/day
