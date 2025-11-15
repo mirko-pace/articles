@@ -227,6 +227,12 @@ pooled <- att_ci_all %>%
 ### 6.4 Multiple views to avoid false comfort
 Finally, we complement the formal tests with visual diagnostics. Daily ATT curves with conformal pointwise bands reveal how effects evolve and whether they persist; the average post ATT with its p-value and interval provides the primary decision anchor. We also translate percentage-point effects into operational terms (e.g., additional MWh moved off-peak per month) to connect statistical significance with business significance.
 
+## 7. Next steps
+
+As our goal is to produce trustworthy experimental outcomes and recommendations, ASCM has given us a workable way to read small, noisy experiments in a live network, and our next step is to quantify uncertainty around ATT for metrics accumulated over the experiment, rather than relying only on day-by-day snapshots. Looking at cumulative effects can dampen noise and produce steadier reads and enhance the quality of the decision-making process in EVCS.
+
+
+
 
 ## References
 
