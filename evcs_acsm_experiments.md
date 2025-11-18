@@ -8,21 +8,19 @@ layout: default
 ## 1. Introduction: Experimentation in a Complex, Real-World EV Network
 At EVCS, experimentation plays a crucial role in informing our decisions and understanding the value of various paths we can take in developing our product and enhancing the customer and driver experience. 
 
-During the second half of 2025, we've been working on implementing time-based energy rates for our Pay-As-You-Go customers to meet better the demand for a competitive, driver-centric offer for EV drivers on the US West Coast.
-
 The challenges while conducting experiments in this context are numerous. First of all, we would not implement randomized sampling strategies as we favor the consistency of the experience and fairness towards the EV drivers using our network.
 As we examine quasi-experimental designs, such as geo-testing, the heterogeneous nature of our different charging sites - with varying equipment, surroundings, and utilization levels and patterns - poses another significant challenge to a solid and trustworthy approach.
 
-In this article, we use a concrete running example: shifting the share of kWh delivered off-peak after introducing time-based energy rates for Pay-As-You-Go customers.
+During the second half of 2025, we've been working on implementing time-based energy rates for our Pay-As-You-Go customers to meet better the demand for a competitive, driver-centric offer for EV drivers on the US West Coast. In this article, I'll use a concrete running example from this initiative.
 
-Our null hypothesis is that the intervention does not increase off-peak share relative to the counterfactual, i.e., the average post-treatment ATT is ≤ 0. The alternative hypothesis is that the intervention increases off-peak share, i.e., the average post-treatment ATT is > 0.
+As we test different pricing strategies, our null hypothesis is that the intervention does not increase off-peak share relative to the counterfactual, i.e., the average post-treatment ATT is ≤ 0. The alternative hypothesis is that the intervention increases off-peak share, i.e., the average post-treatment ATT is > 0. In plain English: we expect that rolling out advantageous time-of-use pricing for our customers, the share of energy dispensed during off-peak times would increase compared to a control group.
 
-In EVCS, we use Augmented Synthetic Control (ASCM) to construct the counterfactual and test this hypothesis, even in the presence of high day-to-day variability.
+In EVCS, we use Augmented Synthetic Control (ASCM) to construct the counterfactual and test this hypothesis, let's see why.
 
 ## 2. The Challenge: High Variability & Sparse Units
-In a conservative approach, we generally roll out material changes in a limited subset of locations. Typically, a mix of 5 to 10 sites represents a good balance of the key traits of our entire network. 
+In a conservative approach, we generally running experiments involving material changes in the customers' experience on a limited subset of locations. Typically, a mix of 5 to 10 sites represents a good balance of the key traits of our entire network. 
 
-However, our network has a wide range of different setups, contexts in which they operate, and resulting in different levels of utilization, from the single 50kW charger in a very dense, metropolitan area to very powerful 1MW sites along major interstate corridors. From the downtown mall or parking lot in L.A., to the scenic routes in Washington state and Oregon, the EVCS network (counting more than 300 sites and 1600 charging ports) brings high variability in key metrics when looked at each site.
+However, our network has a wide range of different setups, contexts in which they operate, and resulting in different levels of utilization, from the single 50kW charger in a very dense, metropolitan area to very powerful 1MW sites along major interstate corridorsm, from the downtown mall or parking lot in L.A., to the scenic routes in Washington state and Oregon. The EVCS network (counting more than 300 sites and 1600 charging ports) brings high variability in key metrics when looked at each site.
 
 ![Off-Peak share of kWh dispensed](/images/off_peak_kwh.jpg)
 
@@ -60,7 +58,7 @@ $$
 + \Big[m(X_{1t}) - \sum_j w_j^* m(X_{jt})\Big],
 $$
 
-where $m(\cdot)$ is a simple outcome model trained **only on pre-treatment** data (we use ridge regression). This reduces bias without over-fitting noisy daily swings.
+where $m(\cdot)$ is a simple outcome model trained **only on pre-treatment** data (we use Ridge Regression). This reduces bias without over-fitting noisy daily swings.
 
 ### 3.3 Using Covariates in ASCM 
 In our time-of-use example, to help the synthetic match the treated units **before** the intervention, we included a small set of stable, pre-treatment covariates per location. Concretely, we compute per-unit summaries **only on dates $t<t_0$**:
@@ -77,18 +75,18 @@ outcome ~ treated | cov_capacity + cov_uptime +
                     cov_sess + cov_share_pre + cov_share_trend
 ```
 
-**Why this matters**: our network is heterogeneous (hardware, locations, load), and daily noise is high. These pre-period summaries give the model a clearer picture of what “similar” means operationally, which improves the pre-fit and the quality of the counterfactual after $t_0$—without leaking post-treatment information.
+**Why this matters**: as said, our network is heterogeneous (hardware, locations, load), and daily noise is high. These pre-period summaries give the model a clearer picture of what “similar” means operationally, which improves the pre-fit and the quality of the counterfactual after $t_0$—without leaking post-treatment information.
 
 
 ## 4. Applying ASCM at EVCS
-We focus on five locations that move to a new time-based pricing structure for Pay-As-You-Go customers. The outcome is the **daily off-peak share** (off-peak kWh divided by total kWh). Our goal is to estimate if and how much that share increases for each treated site relative to what would have happened without the introduction of time-of-use pricing.
+Let's go back to our new time-based pricing structure for Pay-As-You-Go customers we'd like to test: the next step is to select five locations that we move to the new pricing, defining our treatment group. The outcome, in our hypothesys system, is the **daily off-peak share** (off-peak kWh divided by total kWh), and our goal is to estimate if and how much that share increases for each treated site relative to what would have happened without the introduction of time-of-use pricing.
 
-**Data we used (daily, station-level):** off-peak and peak kWh, total sessions, uptime, and available capacity. For each station, we built an outcome series (off-peak share) and computed **pre-treatment covariates**: mean capacity, mean uptime, mean sessions, baseline off-peak share, and a pre-trend. These covariates are fixed per unit (computed only on pre days), so there’s no leakage.
+For each location in the network, we built an outcome series (off-peak share) and computed **pre-treatment covariates**: the average capacity, uptime and number of daily sessions, the baseline off-peak share and its trend.
 
-We fit one ASCM **per treated location** where the donors are all non-treated sites, and then pool effects. For each single-site fit we use:
-- **Outcome**: daily off-peak share
-- **Treatment timing**: the go-live date for pricing
-- **Pre-period covariates**: mean capacity, mean uptime, mean sessions, baseline off-peak share, and a pre-trend of off-peak share
+We then fit one ASCM **per treated location** where the donors are all non-treated sites, to then calculate an aggregated effect blending (or pooling) the estimated impact. For each single-site model fit we use this structure:
+- **Outcome**: daily off-peak share;
+- **Treatment timing**: in our case, the go-live date for the new pricing structure;
+- **Pre-period covariates**: mean capacity, mean uptime, mean sessions, baseline off-peak share, and a pre-trend of off-peak share;
 - **Augmentation**: Ridge Regression, with SCM weights enabled and donor hygiene (drop missing pre coverage or zero pre variance)
 
 In practice, the steps look like the following:
@@ -99,7 +97,8 @@ In practice, the steps look like the following:
 4) Fit `augsynth(outcome ~ treated | covariates, progfunc="Ridge", scm=TRUE)`.  
 5) Extract the post-period effect per treated unit and then **pool** (equal-weight or kWh-weighted).  
 
-This approach keeps the story simple—compare actual vs synthetic for each site—while the **covariates** make the synthetic more comparable to the treated station’s baseline. As a result, the post-treatment difference we see is less likely to be driven by quirks like persistent uptime differences or unusually high capacity at the treated site.
+The goal is to **compare the observed data from the treated group versus robust synthetic data at location level**, so that the covariates can help the ASCM model to create a synthetic counterfactual less likely to be biased by differences in uptime, big differences in capacity or utilization/traffic.
+
 
 ## 5. Implementation Details
 
@@ -143,7 +142,7 @@ pre_cov <- df %>%
   ) %>%
   tidyr::drop_na()
 ```
-Taking a slightly different approach to `multi_synth`, we run one ASCM per treated locations where the donors are all non-treated stations, then pool effects across all five. This keeps things interpretable (actual vs synthetic for each site) and lets covariates improve the pre-fit in a targeted way.
+Taking a slightly different approach to `multi_synth`, we run one ASCM per treated locations where the donors are all non-treated stations, then pool effects across all treated locations. This keeps things interpretable (actual vs synthetic for each site) and lets covariates improve the pre-fit in a targeted way.
 
 Finally, we pass covariates in `augsynth` so the method balances on these predictors in the pre period, and we use Ridge Regression for stability in the augmentation process.
 
@@ -165,7 +164,7 @@ Before fitting, we made sure to have full pre-period coverage for donors, and dr
 
 ### Reading the results
 From each single-unit fit we extract the daily ATT (treated minus synthetic). We then plot actual vs synthetic off-peak share for each location,
-compute a pooled daily ATT across the five treated sites (equal-weight or kWh-weighted using pre-period average kWh), and summarize uncertainty using conformal intervals per unit; for a blended view we plot the pooled mean line and an envelope built from the per-unit conformal bands.
+compute a pooled daily ATT across the treated sites (equal-weight or kWh-weighted using pre-period average kWh), and summarize uncertainty using conformal intervals per unit; for a blended view we plot the pooled mean line and an envelope built from the per-unit conformal bands.
 
 ![ATT trend](/images/att_with_intervals.png)
 
