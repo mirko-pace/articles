@@ -11,21 +11,23 @@ At EVCS, experimentation plays a crucial role in informing our decisions and und
 The challenges while conducting experiments in this context are numerous. First of all, we would not implement randomized sampling strategies as we favor the consistency of the experience and fairness towards the EV drivers using our network.
 As we examine quasi-experimental designs, such as geo-testing, the heterogeneous nature of our different charging sites - with varying equipment, surroundings, and utilization levels and patterns - poses another significant challenge to a solid and trustworthy approach.
 
-During the second half of 2025, we've been working on implementing time-based energy rates for our Pay-As-You-Go customers to meet better the demand for a competitive, driver-centric offer for EV drivers on the US West Coast. In this article, I'll use a concrete running example from this initiative.
-
-As we test different pricing strategies, our null hypothesis is that the intervention does not increase off-peak share relative to the counterfactual, i.e., the average post-treatment ATT is ≤ 0. The alternative hypothesis is that the intervention increases off-peak share, i.e., the average post-treatment ATT is > 0. In plain English: we expect that rolling out advantageous time-of-use pricing for our customers, the share of energy dispensed during off-peak times would increase compared to a control group.
-
-In EVCS, we use Augmented Synthetic Control (ASCM) to construct the counterfactual and test this hypothesis, let's see why.
-
-## 2. The Challenge: High Variability & Sparse Units
 In a conservative approach, we generally running experiments involving material changes in the customers' experience on a limited subset of locations. Typically, a mix of 5 to 10 sites represents a good balance of the key traits of our entire network. 
 
 However, our network has a wide range of different setups, contexts in which they operate, and resulting in different levels of utilization, from the single 50kW charger in a very dense, metropolitan area to very powerful 1MW sites along major interstate corridorsm, from the downtown mall or parking lot in L.A., to the scenic routes in Washington state and Oregon. The EVCS network (counting more than 300 sites and 1600 charging ports) brings high variability in key metrics when looked at each site.
 
+Traditional difference-in-difference (diff-in-diff) approaches used in the past proved to be difficult to implement and prone to failure due to a variety of reasons beyond our direct control: it was generally challenging to find a subset of "control" sites with matching characteristics to the treatment group and stationary trends over time. It was even more challenging to account for external factors, such as equipment issues, weather, and vandalism (to name a few), when you have a very limited number of sites in your treatment and control groups.
+
+In EVCS, we use Augmented Synthetic Control (ASCM) to construct the counterfactual and test this hypothesis, let's see why.
+
+## 2. The Challenge: High Variability & Sparse Units
+During the second half of 2025, we've been working on implementing time-based energy rates for our Pay-As-You-Go customers to meet better the demand for a competitive, driver-centric offer for EV drivers on the US West Coast. In this article, I'll use a concrete running example from this initiative.
+
+As we test different pricing strategies, our null hypothesis is that the intervention does not increase off-peak share relative to the counterfactual, i.e., the average post-treatment ATT is ≤ 0. The alternative hypothesis is that the intervention increases off-peak share, i.e., the average post-treatment ATT is > 0. In plain English: we expect that rolling out advantageous time-of-use pricing for our customers, the share of energy dispensed during off-peak times would increase compared to a control group.
+
 ![Off-Peak share of kWh dispensed](/images/off_peak_kwh.jpg)
 
+As you can see from fig. 1, our treated group only consisted of 5 sites, with different patterns and level of utilization. As said before, the variable nature of the EVCS network poses a challenge in the design of a reliable experiment. A challenge that finds a practical and effective solution in the Augmented Synthetic Control method: let's see why and how is a great fit in our context.
 
-Traditional difference-in-difference (diff-in-diff) approaches used in the past proved to be difficult to implement and prone to failure due to a variety of reasons beyond our direct control: it was generally challenging to find a subset of "control" sites with matching characteristics to the treatment group and stationary trends over time. It was even more challenging to account for external factors, such as equipment issues, weather, and vandalism (to name a few), when you have a very limited number of sites in your treatment and control groups.
 
 ## 3. Why Synthetic Control (and its Augmented Variant)
 ### 3.1 The Synthetic Control Method (SCM)
