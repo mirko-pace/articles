@@ -4,30 +4,28 @@ layout: default
 ---
 # Augmented Synthetic Control for Continuous Field Experiments in EV Charging Networks
 
-
 ## 1. Introduction: Experimentation in a Complex, Real-World EV Network
-At EVCS, experimentation plays a crucial role in informing our decisions and understanding the value of various paths we can take in developing our product and enhancing the customer and driver experience. 
+At EVCS, experimentation plays a crucial role in informing our decisions and understanding the value of the various paths we can take to develop our product and enhance the customer and driver experience. 
 
-The challenges while conducting experiments in this context are numerous. First of all, we would not implement randomized sampling strategies as we favor the consistency of the experience and fairness towards the EV drivers using our network.
+The challenges while conducting experiments in this context are numerous. First of all, we would not implement randomized sampling strategies, as we favor consistency of experience and fairness towards EV drivers using our network.
 As we examine quasi-experimental designs, such as geo-testing, the heterogeneous nature of our different charging sites - with varying equipment, surroundings, and utilization levels and patterns - poses another significant challenge to a solid and trustworthy approach.
 
-In a conservative approach, we generally running experiments involving material changes in the customers' experience on a limited subset of locations. Typically, a mix of 5 to 10 sites represents a good balance of the key traits of our entire network. 
+In a conservative approach, we generally run experiments involving material changes to the customer experience at a limited subset of locations. Typically, a mix of 5 to 10 sites represents a good balance of the key traits of our entire network. 
 
-However, our network has a wide range of different setups, contexts in which they operate, and resulting in different levels of utilization, from the single 50kW charger in a very dense, metropolitan area to very powerful 1MW sites along major interstate corridorsm, from the downtown mall or parking lot in L.A., to the scenic routes in Washington state and Oregon. The EVCS network (counting more than 300 sites and 1600 charging ports) brings high variability in key metrics when looked at each site.
+However, our network has a wide range of different setups, contexts in which they operate, and resulting in varying levels of utilization, from the single 50kW charger in a very dense, metropolitan area to very powerful 1MW sites along major interstate corridors, from the downtown mall or parking lot in L.A., to the scenic routes in Washington state and Oregon. The EVCS network (counting more than 350 sites and 1800 charging ports) brings high variability in key metrics when looking at each site.
 
-Traditional difference-in-difference (diff-in-diff) approaches used in the past proved to be difficult to implement and prone to failure due to a variety of reasons beyond our direct control: it was generally challenging to find a subset of "control" sites with matching characteristics to the treatment group and stationary trends over time. It was even more challenging to account for external factors, such as equipment issues, weather, and vandalism (to name a few), when you have a very limited number of sites in your treatment and control groups.
+Traditional difference-in-differences (diff-in-diff) approaches used in the past proved challenging to implement and prone to failure for a variety of reasons beyond our direct control: it was generally difficult to find a subset of "control" sites with characteristics matching those of the treatment group and stationary trends over time. It was even more challenging to account for external factors, such as equipment issues, weather, and vandalism (to name a few), when you have a limited number of sites in your treatment and control groups.
 
-In EVCS, we use Augmented Synthetic Control (ASCM) to construct the counterfactual and test this hypothesis, let's see why.
+In EVCS, we use Augmented Synthetic Control (ASCM) to construct the counterfactual and test this hypothesis. Let's see why.
 
 ## 2. The Challenge: High Variability & Sparse Units
-During the second half of 2025, we've been working on implementing time-based energy rates for our Pay-As-You-Go customers to meet better the demand for a competitive, driver-centric offer for EV drivers on the US West Coast. In this article, I'll use a concrete running example from this initiative.
+During the second half of 2025, we've been working to implement time-based energy rates for our Pay-As-You-Go customers to meet better the demand for a competitive, driver-centric offer for EV drivers on the US West Coast. In this article, I'll use a concrete running example from this initiative.
 
 As we test different pricing strategies, our null hypothesis is that the intervention does not increase off-peak share relative to the counterfactual, i.e., the average post-treatment ATT is ≤ 0. The alternative hypothesis is that the intervention increases off-peak share, i.e., the average post-treatment ATT is > 0. In plain English: we expect that rolling out advantageous time-of-use pricing for our customers, the share of energy dispensed during off-peak times would increase compared to a control group.
 
 ![Off-Peak share of kWh dispensed](/images/off_peak_kwh.jpg)
 
-As you can see from fig. 1, our treated group only consisted of 5 sites, with different patterns and level of utilization. As said before, the variable nature of the EVCS network poses a challenge in the design of a reliable experiment. A challenge that finds a practical and effective solution in the Augmented Synthetic Control method: let's see why and how is a great fit in our context.
-
+As you can see in fig. 1, a typical treated group may consist of only five sites, with varying patterns and levels of utilization. As mentioned earlier, the variable nature of the EVCS network poses a challenge for designing a reliable experiment. A challenge that the Augmented Synthetic Control method addresses with a practical, effective solution: let's see why and how it is an excellent fit for our context.
 
 ## 3. Why Synthetic Control (and its Augmented Variant)
 ### 3.1 The Synthetic Control Method (SCM)
@@ -176,7 +174,11 @@ In a nutshell: the covariates give ASCM a clearer picture of each treated locati
 ## 6. Inference & Hypothesis Testing
 
 ### 6.1 State the hypothesis
-Our goal is to determine whether the intervention lifted the **share of off-peak kWh** for the treated locations, relative to what would have happened without the change. Formally, we treat the **Average Treatment Effect on the Treated (ATT)** as our target: the daily ATT is the treated unit’s outcome minus its synthetic counterfactual, and the **average post-treatment ATT** is the mean of those daily effects after go-live. The null hypothesis asserts no improvement—on average, the post-treatment effect is zero. When we expect an increase, we phrase this as a one-sided test: under **H₀**, the average ATT is less than or equal to zero; under **H₁**, it is strictly positive.
+Our goal is to determine whether the intervention increased the share of off-peak kWh consumption in the treated locations compared to what would have happened without the intervention. 
+
+Formally, we consider the Average Treatment Effect on the Treated (ATT) as our primary outcome measure. The daily ATT is calculated by subtracting the synthetic counterfactual from the treated unit’s actual outcome. The average post-treatment ATT is the mean of these daily effects after the intervention goes live. 
+
+The null hypothesis claims that there is no improvement, which means that, on average, the post-treatment effect is zero. When we anticipate an increase, we frame this as a one-sided test: under the null hypothesis (H₀), the average ATT is less than or equal to zero; under the alternative hypothesis (H₁), it is strictly positive
 
 ### 6.2 Per-location inference (ASCM built-ins)
 For each treated location we rely on ASCM’s **conformal inference**, which is designed for time-series outcomes and provides a valid test of the **average post-treatment effect** along with **pointwise confidence intervals** for the daily effects. In practice, we fit the model and then call `summary()` with conformal inference enabled and a one-sided statistic that matches our directional hypothesis:
@@ -228,7 +230,12 @@ pooled <- att_ci_all %>%
 ```
 
 ### 6.4 Multiple views to avoid false comfort
-Finally, we complement the formal tests with visual diagnostics. Daily ATT curves with conformal pointwise bands reveal how effects evolve and whether they persist; the average post ATT with its p-value and interval provides the primary decision anchor. We also translate percentage-point effects into operational terms (e.g., additional MWh moved off-peak per month) to connect statistical significance with business significance.
+To expand our formal tests, we employ visual diagnostics as well. Daily Average Treatment Effect (ATT) curves, accompanied by conformal pointwise confidence bands, can illustrate how effects change over time and whether they remain significant. 
+
+We use the average post-ATT, with its p-value and confidence interval, as our primary decision-making reference.
+
+Additionally, we translate percentage-point effects into operational terms—such as the additional megawatt-hours (MWh) shifted off-peak each month—to bridge the gap between statistical significance and its practical implications for the business.
+
 
 ## 7. Next steps
 
