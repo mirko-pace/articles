@@ -4,7 +4,7 @@ layout: default
 ---
 # Augmented Synthetic Control for Continuous Field Experiments in EV Charging Networks
 
-## 1. Introduction: Experimentation in a Complex, Real-World EV Network
+## 1. Experimentation in a Complex, Real-World EV Network
 At EVCS, experimentation plays a crucial role in informing our decisions and understanding the value of the various paths we can take to develop our product and enhance the customer and driver experience. 
 
 The challenges while conducting experiments in this context are numerous. First of all, we would not implement randomized sampling strategies, as we favor consistency of experience and fairness towards EV drivers using our network.
