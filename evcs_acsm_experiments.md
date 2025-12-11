@@ -243,18 +243,31 @@ As our goal is to produce trustworthy experimental outcomes and recommendations,
 
 
 
-
 ## References
 
-- **Abadie, A., Diamond, A., & Hainmueller, J. (2010).** Synthetic Control Methods for Comparative Case Studies: Estimating the Effect of California’s Tobacco Control Program. *Journal of the American Statistical Association* https://doi.org/10.1198/jasa.2009.ap08746. :contentReference[oaicite:0]{index=0}
+- **Abadie, A., Diamond, A., & Hainmueller, J. (2010).**  
+  *Synthetic Control Methods for Comparative Case Studies: Estimating the Effect of California’s Tobacco Control Program.*  
+  *Journal of the American Statistical Association.*  
+  https://doi.org/10.1198/jasa.2009.ap08746
 
-- **Ben-Michael, E., Feller, A., & Rothstein, J. (2021).** The Augmented Synthetic Control Method. *Journal of the American Statistical Association* (JASA); https://doi.org/10.1080/01621459.2021.1929245 :contentReference[oaicite:1]{index=1}
+- **Ben-Michael, E., Feller, A., & Rothstein, J. (2021).**  
+  *The Augmented Synthetic Control Method.*  
+  *Journal of the American Statistical Association.*  
+  https://doi.org/10.1080/01621459.2021.1929245
 
-- **augsynth R package** — Implementation of ASCM with vignettes (single and staggered adoption) and examples. https://github.com/ebenmichael/augsynth :contentReference[oaicite:2]{index=2}
+- **augsynth R package.**  
+  Implementation of ASCM with vignettes (single and staggered adoption) and examples.  
+  https://github.com/ebenmichael/augsynth
 
-- **Chernozhukov, V., Wüthrich, K., & Zhu, Y. (2021/2022).** Exact and Robust Conformal Inference for Counterfactual and Synthetic Controls. (JASA article / arXiv preprint). https://doi.org/10.1080/01621459.2021.1920957 :contentReference[oaicite:3]{index=3}
+- **Chernozhukov, V., Wüthrich, K., & Zhu, Y. (2021/2022).**  
+  *Exact and Robust Conformal Inference for Counterfactual and Synthetic Controls.*  
+  *(JASA article / arXiv preprint).*  
+  https://doi.org/10.1080/01621459.2021.1920957
 
-- **Sun, L., Ben-Michael, E., & Feller, A. (2025).** Using Multiple Outcomes to Improve the Synthetic Control Method. https://arxiv.org/pdf/2311.16260. :contentReference[oaicite:4]{index=4}
+- **Sun, L., Ben-Michael, E., & Feller, A. (2025).**  
+  *Using Multiple Outcomes to Improve the Synthetic Control Method.*  
+  https://arxiv.org/pdf/2311.16260
 
-- **Practical tutorial:** Conformal Inference for Synthetic Control (walk-through with code and intuition). https://matheusfacure.github.io/python-causality-handbook/Conformal-Inference-for-Synthetic-Control.html?utm_source=chatgpt.com :contentReference[oaicite:5]{index=5}
-
+- **Practical tutorial:**  
+  *Conformal Inference for Synthetic Control (walk-through with code and intuition).*  
+  https://matheusfacure.github.io/python-causality-handbook/Conformal-Inference-for-Synthetic-Control.html
