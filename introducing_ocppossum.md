@@ -1,6 +1,6 @@
-# Introducing OCPPossum
+# How EVCS diagnoses charging sessions using AI
 
-### How EVCS diagnoses sessions using AI
+### Also: how I built my first MCP Server
 ----
 ## Because we're a lean team, we need fast and trustworthy answers
 
