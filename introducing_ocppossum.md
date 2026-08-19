@@ -55,32 +55,41 @@ Given one session identifier, the tool runs six steps:
 - **Reconcile** metered energy against billed energy, and flag disagreement.
 - **Interpret** — build the event timeline, extract faults, reduce the meter samples to a charging curve, and run detection rules that separate *the vehicle stopped drawing* from *the charger stopped supplying*.
 
-What comes back is a fixed summary, computed rather than described:
+What comes back is a summary, computed rather than guessed:
 
 ```
-Date:               2026-07-29 (PST)
-Site:               Northside Garage
-Charger:            CHARGER-B (Vendor B, AC Level 2)
+Date:               2026-08-14 (PST)
+Site:               Xxxxxxx Xxxx
+Charger:            veefil-xxxxxxx (Tritium TRI93-50-01)
 Connector:          1
-Transaction:        #218
-Start:              22:23:26 UTC  (meterStart: 7081876)
-Stop:               15:34:28 UTC  (meterStop: 7142844 Wh)
-Duration:           ~17.2 hr
-Energy:             60.9682 kWh (matches billed KWH)
-Stop reason:        "EVDisconnected" (The cable was unplugged)
-Plug to charge:     43 sec
-Idle after charge:  3 sec
-Power:              peak 6.67 kW, avg 3.22 kW
-Body temp:          ~42.0°C — normal
+Transaction:        #1471
+Start:              00:33:39 UTC  (meterStart: 0)
+Stop:               01:03:57 UTC  (meterStop: 13658 Wh)
+Duration:           ~30.3 min
+Energy:             13.658 kWh (matches billed KWH)
+Stop reason:        "Local" (Stopped at the charger)
+Idle after charge:  9 sec
+Power:              peak 39.64 kW, avg 26.12 kW
+Ending SoC:         80% (from 34%)
+Body temp:          ~306.6K (~33.5°C) — normal
+Economics:          Revenues: $x.xx | Gross profit: $x.xx | Elec cost: $x.xx
 ```
 
-Alongside it, a single-line activity bar across the whole window — `#` charging, `~` plugged in but not drawing, `-` idle:
+Alongside it, a single-line activity bar across the whole window:
 
 ```
-22:13 |###########################~~~~~~~~~~~~~~~~~~~~~| 15:44
+|----------############################=---------|
+00:23:39                                    01:13:57
+# Charging — energy flowing
+= Plugged in, not charging (Preparing / Finishing)
+- Idle — connector available, nothing plugged in
 ```
 
-That one line says something no table does. Nearly ten hours of genuine charging, and then seven and a half hours of a finished car still occupying the connector. Nothing failed. But that connector earned nothing for most of the night, and this is what that looks like.
+And finally the key contribution from the LLM, with a description of the critical events happened during the session and the opportunity to highlight anomalies and errors:
+
+```
+This session was clean and unremarkable. Charging started immediately with RemoteStartTransaction, ran for ~30 minutes on a healthy CHAdeMO DC connection, and stopped normally ("Local" reason — driver/vehicle ended it, not a fault). No error codes or findings were flagged. Power began at ~39.6 kW and tapered smoothly down to ~19.5 kW as the Nissan Leaf's SoC climbed from 34% to 80% — a textbook charge taper, not throttling or derating. The cable was removed just 9 seconds after charging ended, so there was no idle connector time.
+```
 
 ## From NetOps to the Support Desk
 
