@@ -55,6 +55,10 @@ Given one session identifier, the tool runs six steps:
 - **Reconcile** metered energy against billed energy, and flag disagreement.
 - **Interpret** — build the event timeline, extract faults, reduce the meter samples to a charging curve, and run detection rules that separate *the vehicle stopped drawing* from *the charger stopped supplying*.
 
+Now everyone in EVCS can ask our chatbot something like:
+
+> Hey @FlintBot, please diagnose session 2098953
+
 What comes back is a summary, computed rather than guessed:
 
 ```
@@ -87,9 +91,9 @@ Alongside it, a single-line activity bar across the whole window:
 
 And finally the key contribution from the LLM, with a description of the critical events happened during the session and the opportunity to highlight anomalies and errors:
 
-```
-This session was clean and unremarkable. Charging started immediately with RemoteStartTransaction, ran for ~30 minutes on a healthy CHAdeMO DC connection, and stopped normally ("Local" reason — driver/vehicle ended it, not a fault). No error codes or findings were flagged. Power began at ~39.6 kW and tapered smoothly down to ~19.5 kW as the Nissan Leaf's SoC climbed from 34% to 80% — a textbook charge taper, not throttling or derating. The cable was removed just 9 seconds after charging ended, so there was no idle connector time.
-```
+
+> This session was clean and unremarkable. Charging started immediately with RemoteStartTransaction, ran for ~30 minutes on a healthy CHAdeMO DC connection, and stopped normally ("Local" reason — driver/vehicle ended it, not a fault). No error codes or findings were flagged. Power began at ~39.6 kW and tapered smoothly down to ~19.5 kW as the Nissan Leaf's SoC climbed from 34% to 80% — a textbook charge taper, not throttling or derating. The cable was removed just 9 seconds after charging ended, so there was no idle connector time.
+
 
 ## From NetOps to the Support Desk
 
