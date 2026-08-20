@@ -1,3 +1,9 @@
+---
+title: How EVCS diagnoses charging sessions using AI
+layout: default
+image: /images/ocppossum_thumb.jpg
+---
+
 # How EVCS diagnoses charging sessions using AI
 
 ### Also: why I built my first MCP Server - part 1
@@ -109,7 +115,7 @@ Stepping aside from the EV context: if you find yourself stuffing the system pro
 
 OCPPossum is an example of how you can improve your AI's answers by simply reducing the amount of guessing the model needs to do.
 
-#
+
 
 ### What's coming in part 2
 In this article, I focused more on what drove me to build my first MCP server from scratch: the problems I wanted to solve, the outcome I sought, and the impact I wanted to achieve.
