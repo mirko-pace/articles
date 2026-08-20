@@ -1,6 +1,6 @@
 # How EVCS diagnoses charging sessions using AI
 
-### Also: how I built my first MCP Server
+### Also: why I built my first MCP Server - part 1
 ----
 ## Because we're a lean team, we need fast and trustworthy answers
 
@@ -108,3 +108,10 @@ This unlocks a lot of potential all around the monitoring and operations of EVCS
 Stepping aside from the EV context: if you find yourself stuffing the system prompt of your AI agent with dozens of lines instructing the model on how to navigate convoluted, multi-hop business logic, consider moving that logic out of the prompt and investing your time in customizing the tools the model can use.
 
 OCPPossum is an example of how you can improve your AI's answers by simply reducing the amount of guessing the model needs to do.
+
+#
+
+### What's coming in part 2
+In this article, I focused more on what drove me to build my first MCP server from scratch: the problems I wanted to solve, the outcome I sought, and the impact I wanted to achieve.
+
+In the second part, I'll talk more about the technical implementation and architecture, and what I learned along the way. 
